@@ -1,68 +1,76 @@
+const authKey = 'ff7e49fc-e61e-4295-9221-89b892ae7e61:fx'; 
 const express = require('express');
-const bodyParser = require('body-parser');
-const fetch = require('node-fetch'); // If you prefer axios, install it and use it instead
-const cors = require('cors')
+const cors = require('cors');
 const path = require('path');
 
 const app = express();
 const port = 3000;
 
-app.use(cors({ origin: 'http://127.0.0.1:5501' })); // Allow only this origin
+// Middleware
+app.use(cors());
+app.use(express.json()); // Parse incoming JSON requests
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
-// Serve static files (HTML, CSS, JS) from the 'public' folder
-app.use(express.static(path.join(__dirname, 'main')));
+// Serve static files from the 'main' directory
+app.use(express.static(path.join(__dirname, 'Main')));
 
-// DeepL API Credentials
-const authKey = 'ff7e49fc-e61e-4295-9221-89b892ae7e61:fx'; // Replace with your key
+// DeepL API credentials
+const DEEPL_API_KEY = 'ff7e49fc-e61e-4295-9221-89b892ae7e61:fx'; // Replace with your actual DeepL API key
+const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate';
+
+// POST route for translation
+app.get('/test', (req, res) => {
+    res.json({ message: 'Server is working!' });
+});
 
 app.post('/translate', async (req, res) => {
     const { text, targetLang, sourceLang } = req.body;
 
+    // Validate required fields
     if (!text || !targetLang) {
         return res.status(400).json({ error: 'Missing required fields: text or targetLang' });
     }
 
-    const url = 'https://api-free.deepl.com/v2/translate';
-    const params = new URLSearchParams();
-    params.append('auth_key', authKey);  // Your DeepL API key
-    params.append('text', text);
-    params.append('target_lang', targetLang);
+    // Prepare DeepL API request parameters
+    const params = new URLSearchParams({
+        auth_key: DEEPL_API_KEY,
+        text,
+        target_lang: targetLang,
+    });
 
-    // Optional: Only include sourceLang if it exists
+    // Include sourceLang if provided
     if (sourceLang) {
         params.append('source_lang', sourceLang);
     }
 
     try {
-        const response = await fetch(url, {
+        // Make the API request to DeepL
+        const response = await fetch(DEEPL_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: params,
         });
 
-        // Log the status and response body for debugging
-        console.log('DeepL API Response Status:', response.status);
-        const responseBody = await response.text(); // Get raw response body as text
-        console.log('DeepL API Response Body:', responseBody); // Log raw response body
+        // Handle API response
+        const responseBody = await response.text();
 
         if (!response.ok) {
-            // If the response is not ok, log the error details
-            throw new Error(`HTTP error! Status: ${response.status}, Response: ${responseBody}`);
+            throw new Error(`DeepL API Error: Status ${response.status}, Response: ${responseBody}`);
         }
 
-        // Parse the JSON response if everything is okay
+        // Parse the JSON response
         const data = JSON.parse(responseBody);
-        console.log('DeepL API JSON Response:', data); // Log the parsed JSON response
+        const translatedText = data.translations[0]?.text;
 
-        res.json({ translatedText: data.translations[0].text }); // Send translated text to client
+        // Send the translated text back to the client
+        res.json({ translatedText });
     } catch (error) {
         console.error('Error in translation request:', error.message);
-        res.status(500).json({ error: 'Failed to fetch translation', message: error.message });
+        res.status(500).json({ error: 'Translation request failed', details: error.message });
     }
 });
 
-
-// Start Server
+// Start the server
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });

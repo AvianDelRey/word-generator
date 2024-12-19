@@ -1,118 +1,109 @@
-
 let num = 5;
-const numreset = 5;
-let wordList = [];
+const numReset = 5; 
+let wordList = []; // Stores previously used words
 
+// Function to translate text using the DeepL API
 async function translateText(text, targetLang) {
     try {
-        console.log('Requesting translation for:', text, 'Target language:', targetLang); // Log input data
+        console.log('Requesting translation for:', text, 'Target language:', targetLang);
 
         const response = await fetch('http://localhost:3000/translate', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json'
-         },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text, targetLang }),
-        });
+        },5000);
 
-        console.log('Response status:', response.status); // Log the response status
+        console.log('Response status:', response.status);
 
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
         const data = await response.json();
-        
-        // Log the full response
-        console.log('Response JSON:', data);
 
         if (data && data.translatedText) {
-            console.log('Translated Text:', data.translatedText);
+            // console.log('Translated Text:', data.translatedText);
             return data.translatedText;
         } else {
-            console.error('Error: Translated text is undefined or missing in the response.');
+            // console.error('Error: Translated text is undefined or missing in the response.');
             return undefined;
         }
     } catch (error) {
-        console.error('Error:', error);
+        // console.error('Error in translateText:', error.message);
         return undefined;
     }
 }
 
-
-//countdown is a function that counts down from 10 to 0
-
+// Countdown timer function
 function countdown() {
-    document.getElementById('timer').innerHTML = num
+    document.getElementById('timer').innerHTML = num;
     num--;
-    if (num === -1){
-    num = numreset;
+
+    if (num < 0) {
+        num = numReset; // Reset the timer
     }
-    return num
 }
-//get list of words from the api
 
-function logWords() {
-    
-    return fetch("https://random-word-api.vercel.app/api?words=49")
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`)
-            }
-            return response.json()
-        })
-        .then((data) => { console.log("words fetched", data);
+// Fetch a list of random words from an API
+async function logWords() {
+    try {
+        const response = await fetch("https://random-word-api.vercel.app/api?words=49");
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        // console.log("Words fetched:", data);
         return data;
-    })
-        .catch((error) => {
-            console.error("error", error)
-            return ["water","blue","play","floor"] ///list of random words
-        })
+    } catch (error) {
+        console.error("Error fetching words:", error.message);
+        return ["water", "blue", "play", "floor"]; // Default list of words
     }
+}
 
-// Get a word, translate it, and display it in HTML
+// Get a random word, translate it, and display it in the HTML
 async function getWord() {
     try {
-        // Fetch random words
         const words = await logWords();
-        let randomNumber = Math.floor(Math.random() * words.length);
-        let word = words[randomNumber];
+        const randomIndex = Math.floor(Math.random() * words.length);
+        const word = words[randomIndex];
 
         // Display the original word
         document.getElementById('pt-word').innerHTML = word;
 
         // Translate the word
-        const translatedWord = await translateText(word, 'ES'); // Translate to French
+        const translatedWord = await translateText(word, 'ES'); // Translate to Spanish
         document.getElementById('en-word').innerHTML = translatedWord;
+
+        // Add the word to the history
+        wordList.push({ original: word, translated: translatedWord });
+        console.log('Word List:', wordList);
     } catch (error) {
-        console.error("Error in getWord:", error);
+        console.error("Error in getWord:", error.message);
     }
 }
 
-//reset button, time resets and new word is shown
-function resetBttn(){
-    
-    if (num <= 5) {
-       num = 5
-       clearInterval(initialize)
-    
-    }
+// Reset button: reset the timer and display a new word
+function resetButton() {
+    num = numReset; // Reset the timer
+    getWord(); // Fetch a new word
 }
 
-function pauseBttn(){
-    
-    if (num <= 5) {
-       stop(initialize)
-    
-    }
+// Pause button: stops the interval
+function pauseButton() {
+    clearInterval(intervalId);
 }
 
-//update word in list   
-function initialize(){
-    if (num === 5){
-        getWord()
+// Initialize the timer and fetch words at regular intervals
+function initialize() {
+    if (num === numReset) {
+        getWord();
     }
     countdown();
 }
-setInterval(initialize,1000)
-//TODO - keep record of previously used words, decide  how to keep record
-//
+
+// Start the timer
+const intervalId = setInterval(initialize, 1000);
+
+
