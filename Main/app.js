@@ -71,7 +71,6 @@ async function getWord() {
         // Add the word to the history
         sharedstate.currentword = { original: word, translated: translatedword };
         sharedstate.History.push({ original: word, translated: translatedword });
-        console.log(sharedstate)
     
     } catch (error) {
         console.error("Error in getWord:", error.message);
@@ -91,9 +90,10 @@ function Display(){
 }
 
 // Reset button: reset the timer and display a new word
-function resetButton() {
+async function resetButton() {
     clearInterval(intervalId);
-    setInterval(initialize, 1000);
+    num = numReset;
+    intervalId = setInterval(initialize, 1000);
 }
 
 // Pause button: stops the interval
@@ -102,13 +102,12 @@ function pauseButton() {
         isPaused = true
         clearInterval(intervalId);
         document.getElementById("pausePlayButton").innerText = "Play"
-     }
+     } else { 
             isPaused = false
             intervalId = setInterval(initialize, 1000);
             document.getElementById("pausePlayButton").innerText = "Pause"
+    }
 }
-     
-
 // Countdown timer function
 function countdown() {
     document.getElementById('timer').innerHTML = num;
@@ -130,5 +129,5 @@ async function initialize() {
 }
 
 // Start the timer
-// intervalId = setInterval(initialize, 1000)
+intervalId = setInterval(initialize, 1000)
 
