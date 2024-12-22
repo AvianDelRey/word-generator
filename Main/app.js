@@ -1,6 +1,10 @@
 let num = 5;
 const numReset = 5; 
-let wordList = []; // Stores previously used words
+let isPaused = false
+let intervalId
+let sharedstate = { currentword: { original: null, 
+                    translated: null }, 
+                    History: [] };
 
 // Function to translate text using the DeepL API
 async function translateText(text, targetLang) {
@@ -34,15 +38,6 @@ async function translateText(text, targetLang) {
     }
 }
 
-// Countdown timer function
-function countdown() {
-    document.getElementById('timer').innerHTML = num;
-    num--;
-
-    if (num < 0) {
-        num = numReset; // Reset the timer
-    }
-}
 
 // Fetch a list of random words from an API
 async function logWords() {
@@ -62,48 +57,78 @@ async function logWords() {
     }
 }
 
-// Get a random word, translate it, and display it in the HTML
+
+
+// Get a random word, translate it
 async function getWord() {
     try {
         const words = await logWords();
         const randomIndex = Math.floor(Math.random() * words.length);
         const word = words[randomIndex];
 
-        // Display the original word
-        document.getElementById('pt-word').innerHTML = word;
-
         // Translate the word
-        const translatedWord = await translateText(word, 'ES'); // Translate to Spanish
-        document.getElementById('en-word').innerHTML = translatedWord;
-
+        const translatedword = await translateText(word, 'ES'); // Translate to Spanish
         // Add the word to the history
-        wordList.push({ original: word, translated: translatedWord });
-        console.log('Word List:', wordList);
+        sharedstate.currentword = { original: word, translated: translatedword };
+        sharedstate.History.push({ original: word, translated: translatedword });
+        console.log(sharedstate)
+    
     } catch (error) {
         console.error("Error in getWord:", error.message);
+        sharedstate.currentword = { original: null, translated: null};
     }
+    return sharedstate.currentword;
+}
+
+
+function Display(){
+    let currentWord = sharedstate.currentword.original;
+    let currTranslation = sharedstate.currentword.translated;
+
+    document.getElementById('en-word').innerHTML = currTranslation;
+    document.getElementById('pt-word').innerHTML = currentWord;
+
 }
 
 // Reset button: reset the timer and display a new word
 function resetButton() {
-    num = numReset; // Reset the timer
-    getWord(); // Fetch a new word
+    clearInterval(intervalId);
+    setInterval(initialize, 1000);
 }
 
 // Pause button: stops the interval
 function pauseButton() {
-    clearInterval(intervalId);
+    if (!isPaused){
+        isPaused = true
+        clearInterval(intervalId);
+        document.getElementById("pausePlayButton").innerText = "Play"
+     }
+            isPaused = false
+            intervalId = setInterval(initialize, 1000);
+            document.getElementById("pausePlayButton").innerText = "Pause"
+}
+     
+
+// Countdown timer function
+function countdown() {
+    document.getElementById('timer').innerHTML = num;
+    num--;
+
+    if (num < 0) {
+        num = numReset; // Reset the timer
+    }
 }
 
 // Initialize the timer and fetch words at regular intervals
-function initialize() {
+async function initialize() {
+    
     if (num === numReset) {
-        getWord();
+        await getWord();
+        Display();
     }
     countdown();
 }
 
 // Start the timer
-const intervalId = setInterval(initialize, 1000);
-
+// intervalId = setInterval(initialize, 1000)
 
