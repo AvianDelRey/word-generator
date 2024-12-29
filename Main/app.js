@@ -1,9 +1,10 @@
 let num = 5;
 const numReset = 5; 
+const random_word_api = 'https://random-word-api.vercel.app/api?words=10&length=8&type=capitalized'
 let isPaused = false
 let intervalId
-let sharedstate = { currentword: { original: null, 
-                    translated: null }, 
+let sharedstate = { set: [],
+                    currentword: [], 
                     History: [] };
 
 // Function to translate text using the DeepL API
@@ -42,14 +43,14 @@ async function translateText(text, targetLang) {
 // Fetch a list of random words from an API
 async function logWords() {
     try {
-        const response = await fetch("https://random-word-api.vercel.app/api?words=49");
+        const response = await fetch(random_word_api);
 
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
         const data = await response.json();
-        // console.log("Words fetched:", data);
+        console.log("Words fetched:", data);
         return data;
     } catch (error) {
         console.error("Error fetching words:", error.message);
@@ -60,32 +61,57 @@ async function logWords() {
 
 
 // Get a random word, translate it
-async function getWord() {
+async function getWords() {
     try {
         const words = await logWords();
-        const randomIndex = Math.floor(Math.random() * words.length);
-        const word = words[randomIndex];
 
-        // Translate the word
-        const translatedword = await translateText(word, 'ES'); // Translate to Spanish
-        // Add the word to the history
-        sharedstate.currentword = { original: word, translated: translatedword };
-        sharedstate.History.push({ original: word, translated: translatedword });
-    
+
+
+        // Translate the words
+        const translations = await Promise.all(words.map(word => translateText(word,'AR')))
+        sharedstate.set = translations.map((translatedword,index) => ({
+            original: words[index],
+            translated: translatedword,
+        }));
+
     } catch (error) {
         console.error("Error in getWord:", error.message);
-        sharedstate.currentword = { original: null, translated: null};
+        sharedstate.set = { original: null, translated: null};
     }
-    return sharedstate.currentword;
+    return
 }
 
+function wordcount() {
+    const threshold = 5;
+    return sharedstate.set.length < threshold;
+}
 
-function Display(){
-    let currentWord = sharedstate.currentword.original;
-    let currTranslation = sharedstate.currentword.translated;
+async function replenishword() {
+    const newwords = await getWords();
+    sharedstate.set.push(... newwords)
+}
+
+async function Display(){
+    const nextword = sharedstate.set.shift()
+
+    if(sharedstate.set.length === 0) {
+        document.getElementById('en-word').innerHTML = "Fetching...";
+        document.getElementById('pt-word').innerHTML = "Fetching...";
+        console.error("Fetching words!");
+        await replenishword();
+        return;
+    }
+
+    if (wordcount()) {
+        await replenishword();
+    }
+
+    let currentWord = nextword.original;
+    let currTranslation = nextword.translated;
 
     document.getElementById('en-word').innerHTML = currTranslation;
     document.getElementById('pt-word').innerHTML = currentWord;
+    sharedstate.History.push(nextword);
 
 }
 
@@ -98,15 +124,8 @@ async function resetButton() {
 
 // Pause button: stops the interval
 function pauseButton() {
-    if (!isPaused){
-        isPaused = true
         clearInterval(intervalId);
-        document.getElementById("pausePlayButton").innerText = "Play"
-     } else { 
-            isPaused = false
-            intervalId = setInterval(initialize, 1000);
-            document.getElementById("pausePlayButton").innerText = "Pause"
-    }
+        isPaused = false;
 }
 // Countdown timer function
 function countdown() {
@@ -120,10 +139,12 @@ function countdown() {
 
 // Initialize the timer and fetch words at regular intervals
 async function initialize() {
-    
+    if (sharedstate.set.length < 10) {
+        replenishword();
+    }
+
     if (num === numReset) {
-        await getWord();
-        Display();
+        await Display();
     }
     countdown();
 }
