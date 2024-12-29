@@ -68,7 +68,7 @@ async function getWords() {
 
 
         // Translate the words
-        const translations = await Promise.all(words.map(word => translateText(word,'AR')))
+        const translations = await Promise.all(words.map(word => translateText(word,'es')))
         sharedstate.set = translations.map((translatedword,index) => ({
             original: words[index],
             translated: translatedword,
@@ -82,7 +82,7 @@ async function getWords() {
 }
 
 function wordcount() {
-    const threshold = 5;
+    const threshold = 3;
     return sharedstate.set.length < threshold;
 }
 
@@ -97,7 +97,7 @@ async function Display(){
     if(sharedstate.set.length === 0) {
         document.getElementById('en-word').innerHTML = "Fetching...";
         document.getElementById('pt-word').innerHTML = "Fetching...";
-        console.error("Fetching words!");
+        console.error("Fetching words!?", sharedstate.set);
         await replenishword();
         return;
     }
@@ -124,8 +124,15 @@ async function resetButton() {
 
 // Pause button: stops the interval
 function pauseButton() {
+    if (!isPaused) {
         clearInterval(intervalId);
+        isPaused = true;
+        document.getElementById("pausePlayButton").innerText = "Resume";
+    } else {
+        intervalId = setInterval(initialize, 1000);
         isPaused = false;
+        document.getElementById("pausePlayButton").innerText = "Pause";
+    }
 }
 // Countdown timer function
 function countdown() {
@@ -139,7 +146,7 @@ function countdown() {
 
 // Initialize the timer and fetch words at regular intervals
 async function initialize() {
-    if (sharedstate.set.length < 10) {
+    if (sharedstate.set.length < 3) {
         replenishword();
     }
 
