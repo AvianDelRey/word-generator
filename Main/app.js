@@ -78,7 +78,7 @@ async function getWords() {
         console.error("Error in getWord:", error.message);
         sharedstate.set = { original: null, translated: null};
     }
-    return
+
 }
 
 function wordcount() {
@@ -88,7 +88,7 @@ function wordcount() {
 
 async function replenishword() {
     const newwords = await getWords();
-    sharedstate.set.push(... newwords)
+    sharedstate.set.push(...newwords)
 }
 
 async function Display(){
