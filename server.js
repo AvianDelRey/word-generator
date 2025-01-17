@@ -1,8 +1,20 @@
-const authKey = 'ff7e49fc-e61e-4295-9221-89b892ae7e61:fx'; 
+require('dotenv').config();
+console.log(process.env)
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
+const axios = require('axios') ;
+// DeepL API credentials
+const DEEPL_API_KEY = process.env.DEEPL_KEY; 
+const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate';
 
+//random word api
+const WORD_API = process.env.WORD_API;
+
+
+if (!process.env.DEEPL_KEY || !process.env.WORD_API) {
+    throw new Error('Missing required environment variables (deepl_key or word_api)');
+}
 const app = express();
 const port = 3000;
 
@@ -14,13 +26,15 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 // Serve static files from the 'main' directory
 app.use(express.static(path.join(__dirname, 'Main')));
 
-// DeepL API credentials
-const DEEPL_API_KEY = 'ff7e49fc-e61e-4295-9221-89b892ae7e61:fx'; // Replace with your actual DeepL API key
-const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate';
-
-// POST route for translation
-app.get('/test', (req, res) => {
-    res.json({ message: 'Server is working!' });
+app.get('/words', async (req,res) => {
+    try {
+        const response = await axios.get(WORD_API)
+        res.json(response.data);
+    }
+    catch (error) {
+        console.log('Error fetching words:', error.message);
+        res.status(500).json({ error: 'failed to fetch words'})
+    }
 });
 
 app.post('/translate', async (req, res) => {
@@ -33,7 +47,7 @@ app.post('/translate', async (req, res) => {
 
     // Prepare DeepL API request parameters
     const params = new URLSearchParams({
-        auth_key: DEEPL_API_KEY,
+        auth_key: DEEPL_KEY,
         text,
         target_lang: targetLang,
     });
@@ -74,3 +88,5 @@ app.post('/translate', async (req, res) => {
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
+console.log('DEEPL API Key:', process.env.DEEPL_KEY);
+console.log('RANDOM WORD API:', process.env.WORD_API);

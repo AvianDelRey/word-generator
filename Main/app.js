@@ -1,11 +1,12 @@
 let num = 5;
 const numReset = 5; 
-const random_word_api = 'https://random-word-api.vercel.app/api?words=10&length=8&type=capitalized'
+const WORD_API = 'https://random-word-api.vercel.app/api?words=15&length=7';
 let isPaused = false
 let intervalId
 let sharedstate = { set: [],
                     currentword: [], 
                     History: [] };
+                    
 
 // Function to translate text using the DeepL API
 async function translateText(text, targetLang) {
@@ -16,7 +17,7 @@ async function translateText(text, targetLang) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text, targetLang }),
-        },5000);
+        });
 
         console.log('Response status:', response.status);
 
@@ -43,7 +44,7 @@ async function translateText(text, targetLang) {
 // Fetch a list of random words from an API
 async function logWords() {
     try {
-        const response = await fetch(random_word_api);
+        const response = await fetch(WORD_API);
 
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
