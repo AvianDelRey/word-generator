@@ -4,9 +4,10 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios') ;
+
 // DeepL API credentials
 const DEEPL_API_KEY = process.env.DEEPL_KEY; 
-const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate';
+const DEEPL_API_URL = 'https://api-free.deepl.com/v2';
 
 //random word api
 const WORD_API = process.env.WORD_API;
@@ -25,6 +26,10 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 // Serve static files from the 'main' directory
 app.use(express.static(path.join(__dirname, 'Main')));
+
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
+});
 
 app.get('/words', async (req,res) => {
     try {
@@ -47,7 +52,7 @@ app.post('/translate', async (req, res) => {
 
     // Prepare DeepL API request parameters
     const params = new URLSearchParams({
-        auth_key: DEEPL_KEY,
+        auth_key: DEEPL_API_KEY,
         text,
         target_lang: targetLang,
     });

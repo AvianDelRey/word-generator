@@ -1,6 +1,6 @@
 let num = 5;
 const numReset = 5; 
-const WORD_API = 'https://random-word-api.vercel.app/api?words=15&length=7';
+const WORD_API = 'https://random-word-api.vercel.app/api?words=10&length=6&type=capitalized';
 let isPaused = false
 let intervalId
 let sharedstate = { set: [],
@@ -11,8 +11,8 @@ let sharedstate = { set: [],
 // Function to translate text using the DeepL API
 async function translateText(text, targetLang) {
     try {
-        console.log('Requesting translation for:', text, 'Target language:', targetLang);
-
+        
+    console.log('Requesting translation for:', text, 'Target language:', targetLang);
         const response = await fetch('http://localhost:3000/translate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -31,11 +31,11 @@ async function translateText(text, targetLang) {
             // console.log('Translated Text:', data.translatedText);
             return data.translatedText;
         } else {
-            // console.error('Error: Translated text is undefined or missing in the response.');
+            console.error('Error: Translated text is undefined or missing in the response.');
             return undefined;
         }
     } catch (error) {
-        // console.error('Error in translateText:', error.message);
+        console.error('Error in translateText:', error.message);
         return undefined;
     }
 }
@@ -65,9 +65,7 @@ async function logWords() {
 async function getWords() {
     try {
         const words = await logWords();
-
-
-
+        console.log("Words fetched:", words);
         // Translate the words
         const translations = await Promise.all(words.map(word => translateText(word,'es')))
         sharedstate.set = translations.map((translatedword,index) => ({
@@ -148,7 +146,7 @@ function countdown() {
 // Initialize the timer and fetch words at regular intervals
 async function initialize() {
     if (sharedstate.set.length < 3) {
-        replenishword();
+       await replenishword();
     }
 
     if (num === numReset) {
